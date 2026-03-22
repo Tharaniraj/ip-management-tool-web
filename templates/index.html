@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Management Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="container">
+
+    <!-- ── Header ──────────────────────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-left">
+            <h1>⚡ IP Management Tool</h1>
+            <p>Network Address Manager</p>
+        </div>
+        <div class="badges">
+            <div class="badge"                id="badge-total">0 total</div>
+            <div class="badge badge-active"   id="badge-active">0 active</div>
+            <div class="badge badge-inactive" id="badge-inactive">0 inactive</div>
+            <div class="badge badge-reserved" id="badge-reserved">0 reserved</div>
+        </div>
+        <div class="header-user">
+            <span class="user-info">👤 {{ username }}{% if role == 'admin' %} <span class="role-badge">admin</span>{% endif %}</span>
+            <a href="/logout" class="btn-logout">Sign Out</a>
+        </div>
+    </header>
+
+    <!-- ── Toolbar ─────────────────────────────────────────────────────── -->
+    <div class="action-bar">
+        <div class="search-group">
+            <input type="text" id="searchInput"
+                   placeholder="🔍  Search IP, hostname, description…"
+                   class="search-box">
+            <select id="statusFilter" class="status-filter">
+                <option value="All">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+        </div>
+        <div class="action-buttons">
+            <button id="btnAdd"      class="btn btn-add">➕ Add</button>
+            <button id="btnEdit"     class="btn btn-edit">✏️ Edit</button>
+            <button id="btnDelete"   class="btn btn-delete">🗑️ Delete</button>
+            <button id="btnImport"   class="btn btn-import">📥 Import</button>
+            <button id="btnExport"   class="btn btn-export">📤 Export</button>
+            <button id="btnRecover"  class="btn btn-recover">♻️ Recover</button>
+            <button id="btnBackup"   class="btn btn-backup">💾 Backup</button>
+            <button id="btnRefresh"  class="btn btn-refresh">🔄 Refresh</button>
+            <button id="btnSettings" class="btn btn-settings">⚙️ Settings</button>
+        </div>
+    </div>
+
+    <!-- ── Main content ────────────────────────────────────────────────── -->
+    <div class="content">
+        <div class="table-wrapper">
+            <table id="recordsTable" class="records-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" class="checkbox"></th>
+                        <th class="sortable" data-column="ip">IP Address ↕</th>
+                        <th class="sortable" data-column="subnet">Subnet</th>
+                        <th class="sortable" data-column="hostname">Hostname ↕</th>
+                        <th class="sortable" data-column="description">Description ↕</th>
+                        <th class="sortable" data-column="status">Status ↕</th>
+                        <th class="sortable" data-column="added_on">Added ↕</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr class="loading">
+                        <td colspan="7">Loading records…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <p>No records found. Click <strong>Add</strong> to create the first one.</p>
+            <button class="btn btn-add" onclick="openAddDialog()">Create First Record</button>
+        </div>
+    </div>
+
+</div><!-- .container -->
+
+<!-- ── Add / Edit dialog ─────────────────────────────────────────────── -->
+<div id="recordDialog" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="dialogTitle">Add IP Record</h2>
+            <button class="close-btn" onclick="closeDialog('recordDialog')">&times;</button>
+        </div>
+        <form id="recordForm">
+            <div class="form-body">
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" id="ipInput" placeholder="192.168.1.1" required>
+                    <small id="ipError" class="error"></small>
+                </div>
+                <div class="form-group">
+                    <label>Subnet *</label>
+                    <input type="text" id="subnetInput" placeholder="24  or  255.255.255.0" required>
+                </div>
+                <div class="form-group">
+                    <label>Hostname</label>
+                    <input type="text" id="hostnameInput" placeholder="server-01">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="descriptionInput" placeholder="Additional details…" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select id="statusSelect" required>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Reserved">Reserved</option>
+                    </select>
+                </div>
+                <small id="formError" class="error" style="display:block;margin-bottom:8px;"></small>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel"
+                        onclick="closeDialog('recordDialog')">Cancel</button>
+                <button type="submit" class="btn btn-add" id="saveBtn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Recover dialog ────────────────────────────────────────────────── -->
+<div id="deletedDialog" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Recover Deleted Records</h2>
+            <button class="close-btn" onclick="closeDialog('deletedDialog')">&times;</button>
+        </div>
+        <div id="deletedList" class="deleted-list">
+            <p class="loading">Loading…</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-delete"
+                    onclick="clearAllDeleted()">Clear All</button>
+            <button type="button" class="btn btn-cancel"
+                    onclick="closeDialog('deletedDialog')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Import dialog ─────────────────────────────────────────────────── -->
+<div id="importDialog" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Import Records</h2>
+            <button class="close-btn" onclick="closeDialog('importDialog')">&times;</button>
+        </div>
+        <div class="form-body">
+            <div class="form-group">
+                <label>Select file (.csv or .json)</label>
+                <input type="file" id="importFile" accept=".csv,.json">
+            </div>
+            <div id="importStatus" class="import-status"></div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-cancel"
+                    onclick="closeDialog('importDialog')">Cancel</button>
+            <button type="button" class="btn btn-import"
+                    id="previewBtn" onclick="previewImport()">Preview</button>
+            <button type="button" class="btn btn-add"
+                    id="confirmImportBtn" onclick="confirmImport()"
+                    style="display:none;">Import</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Settings dialog ───────────────────────────────────────────────── -->
+<div id="settingsDialog" class="modal">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h2>Settings</h2>
+            <button class="close-btn" onclick="closeDialog('settingsDialog')">&times;</button>
+        </div>
+        <div class="settings-content form-body">
+
+            <!-- Change Password -->
+            <h3>Change Password</h3>
+            <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="oldPassword" placeholder="Current password">
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPassword" placeholder="New password (min 6 chars)">
+            </div>
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+            </div>
+            <button type="button" class="btn btn-edit" onclick="changePassword()">Update Password</button>
+
+            {% if role == 'admin' %}
+            <!-- User Management (Admin only) -->
+            <hr style="border-color:var(--border-color);margin:24px 0 16px 0;">
+            <h3>User Management</h3>
+            <div id="userList" class="deleted-list" style="margin-bottom:16px;max-height:200px;">
+                <p style="padding:12px;color:var(--text-secondary);font-size:13px;">Loading…</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                <div style="flex:1;min-width:110px;" class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newUsername" placeholder="username">
+                </div>
+                <div style="flex:1;min-width:110px;" class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="newUserPassword" placeholder="password">
+                </div>
+                <div style="min-width:90px;" class="form-group">
+                    <label>Role</label>
+                    <select id="newUserRole">
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                    </select>
+                </div>
+                <div class="form-group" style="align-self:flex-end;">
+                    <button type="button" class="btn btn-add" onclick="createNewUser()">Add User</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- About -->
+            <hr style="border-color:var(--border-color);margin:24px 0 16px 0;">
+            <h3>About</h3>
+            <p><strong>IP Management Tool</strong> v1.0.0 — Web Edition</p>
+            <p>Data stored in <code>data/ip_data.json</code> with automatic backups.</p>
+            <p id="settingsRecordCount">Loading…</p>
+
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-cancel"
+                    onclick="closeDialog('settingsDialog')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────────────────────────── -->
+<div id="toast" class="toast"></div>
+
+<script>
+    const CURRENT_USER = "{{ username }}";
+    const USER_ROLE    = "{{ role }}";
+</script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

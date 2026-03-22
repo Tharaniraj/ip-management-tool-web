@@ -1,0 +1,7 @@
+# IP Management Tool — Python dependencies
+#
+# Requires: Python 3.8+
+#
+
+Flask>=2.3.0
+Flask-Cors>=4.0.0

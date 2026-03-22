@@ -1,0 +1,6 @@
+ip,subnet,hostname,description,status
+192.168.1.10,24,router1,Main router,Active
+192.168.1.11,24,switch1,Network switch,Active
+192.168.1.100,24,server1,Web server,Active
+10.0.0.1,8,gateway,Default gateway,Inactive
+10.0.0.5,8,,Reserved IP,Reserved

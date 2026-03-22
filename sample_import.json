@@ -1,0 +1,23 @@
+[
+  {
+    "ip": "172.16.0.1",
+    "subnet": "16",
+    "hostname": "vpn-gateway",
+    "description": "VPN Gateway Server",
+    "status": "Active"
+  },
+  {
+    "ip": "172.16.0.2",
+    "subnet": "16",
+    "hostname": "vpn-server1",
+    "description": "VPN Server 1",
+    "status": "Active"
+  },
+  {
+    "ip": "172.16.0.100",
+    "subnet": "16",
+    "hostname": "",
+    "description": "Reserved for future use",
+    "status": "Reserved"
+  }
+]
