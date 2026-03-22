@@ -4,26 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Management Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+
+<!-- ── Animated 3D Background ───────────────────────────────────────────── -->
+<div class="bg-scene">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="orb orb-5"></div>
+</div>
+
 <div class="container">
 
     <!-- ── Header ──────────────────────────────────────────────────────── -->
     <header class="header">
         <div class="header-left">
-            <h1>⚡ IP Management Tool</h1>
-            <p>Network Address Manager</p>
+            <div class="logo-icon">
+                <i class="fa-solid fa-network-wired"></i>
+            </div>
+            <div class="header-title">
+                <h1>IP Management Tool</h1>
+                <p>Network Address Manager</p>
+            </div>
         </div>
+
         <div class="badges">
             <div class="badge"                id="badge-total">0 total</div>
             <div class="badge badge-active"   id="badge-active">0 active</div>
             <div class="badge badge-inactive" id="badge-inactive">0 inactive</div>
             <div class="badge badge-reserved" id="badge-reserved">0 reserved</div>
         </div>
+
         <div class="header-user">
-            <span class="user-info">👤 {{ username }}{% if role == 'admin' %} <span class="role-badge">admin</span>{% endif %}</span>
-            <a href="/logout" class="btn-logout">Sign Out</a>
+            <div class="user-chip">
+                <i class="fa-solid fa-circle-user"></i>
+                {{ username }}
+                <span class="role-badge role-badge-{{ role }}">{{ role }}</span>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            </a>
         </div>
     </header>
 
@@ -31,7 +56,7 @@
     <div class="action-bar">
         <div class="search-group">
             <input type="text" id="searchInput"
-                   placeholder="🔍  Search IP, hostname, description…"
+                   placeholder="  Search IP, hostname, description…"
                    class="search-box">
             <select id="statusFilter" class="status-filter">
                 <option value="All">All Status</option>
@@ -41,15 +66,15 @@
             </select>
         </div>
         <div class="action-buttons">
-            <button id="btnAdd"      class="btn btn-add">➕ Add</button>
-            <button id="btnEdit"     class="btn btn-edit">✏️ Edit</button>
-            <button id="btnDelete"   class="btn btn-delete">🗑️ Delete</button>
-            <button id="btnImport"   class="btn btn-import">📥 Import</button>
-            <button id="btnExport"   class="btn btn-export">📤 Export</button>
-            <button id="btnRecover"  class="btn btn-recover">♻️ Recover</button>
-            <button id="btnBackup"   class="btn btn-backup">💾 Backup</button>
-            <button id="btnRefresh"  class="btn btn-refresh">🔄 Refresh</button>
-            <button id="btnSettings" class="btn btn-settings">⚙️ Settings</button>
+            <button id="btnAdd"      class="btn btn-add">    <i class="fa-solid fa-plus"></i>        Add</button>
+            <button id="btnEdit"     class="btn btn-edit">   <i class="fa-solid fa-pen"></i>         Edit</button>
+            <button id="btnDelete"   class="btn btn-delete"> <i class="fa-solid fa-trash"></i>       Delete</button>
+            <button id="btnImport"   class="btn btn-import"> <i class="fa-solid fa-file-import"></i> Import</button>
+            <button id="btnExport"   class="btn btn-export"> <i class="fa-solid fa-file-export"></i> Export</button>
+            <button id="btnRecover"  class="btn btn-recover"><i class="fa-solid fa-rotate-left"></i> Recover</button>
+            <button id="btnBackup"   class="btn btn-backup"> <i class="fa-solid fa-floppy-disk"></i> Backup</button>
+            <button id="btnRefresh"  class="btn btn-refresh"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+            <button id="btnSettings" class="btn btn-settings"><i class="fa-solid fa-gear"></i>      Settings</button>
         </div>
     </div>
 
@@ -60,25 +85,44 @@
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="selectAll" class="checkbox"></th>
-                        <th class="sortable" data-column="ip">IP Address ↕</th>
-                        <th class="sortable" data-column="subnet">Subnet</th>
-                        <th class="sortable" data-column="hostname">Hostname ↕</th>
-                        <th class="sortable" data-column="description">Description ↕</th>
-                        <th class="sortable" data-column="status">Status ↕</th>
-                        <th class="sortable" data-column="added_on">Added ↕</th>
+                        <th class="sortable" data-column="ip">
+                            <i class="fa-solid fa-network-wired" style="opacity:.6;margin-right:4px;"></i>IP Address
+                        </th>
+                        <th class="sortable" data-column="subnet">
+                            <i class="fa-solid fa-sitemap" style="opacity:.6;margin-right:4px;"></i>Subnet
+                        </th>
+                        <th class="sortable" data-column="hostname">
+                            <i class="fa-solid fa-server" style="opacity:.6;margin-right:4px;"></i>Hostname
+                        </th>
+                        <th class="sortable" data-column="description">
+                            <i class="fa-solid fa-align-left" style="opacity:.6;margin-right:4px;"></i>Description
+                        </th>
+                        <th class="sortable" data-column="status">
+                            <i class="fa-solid fa-circle-dot" style="opacity:.6;margin-right:4px;"></i>Status
+                        </th>
+                        <th class="sortable" data-column="added_on">
+                            <i class="fa-solid fa-calendar" style="opacity:.6;margin-right:4px;"></i>Added
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr class="loading">
-                        <td colspan="7">Loading records…</td>
+                        <td colspan="7"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading records…</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <div id="emptyState" class="empty-state" style="display:none;">
+            <i class="fa-solid fa-database empty-state-icon"></i>
+            {% if role == 'admin' %}
             <p>No records found. Click <strong>Add</strong> to create the first one.</p>
-            <button class="btn btn-add" onclick="openAddDialog()">Create First Record</button>
+            <button class="btn btn-add" onclick="openAddDialog()">
+                <i class="fa-solid fa-plus"></i> Create First Record
+            </button>
+            {% else %}
+            <p>No records found.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -88,30 +132,32 @@
 <div id="recordDialog" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="dialogTitle">Add IP Record</h2>
-            <button class="close-btn" onclick="closeDialog('recordDialog')">&times;</button>
+            <h2><i class="fa-solid fa-circle-plus"></i> <span id="dialogTitle">Add IP Record</span></h2>
+            <button class="close-btn" onclick="closeDialog('recordDialog')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <form id="recordForm">
             <div class="form-body">
                 <div class="form-group">
-                    <label>IP Address *</label>
+                    <label><i class="fa-solid fa-network-wired"></i> IP Address *</label>
                     <input type="text" id="ipInput" placeholder="192.168.1.1" required>
                     <small id="ipError" class="error"></small>
                 </div>
                 <div class="form-group">
-                    <label>Subnet *</label>
+                    <label><i class="fa-solid fa-sitemap"></i> Subnet *</label>
                     <input type="text" id="subnetInput" placeholder="24  or  255.255.255.0" required>
                 </div>
                 <div class="form-group">
-                    <label>Hostname</label>
+                    <label><i class="fa-solid fa-server"></i> Hostname</label>
                     <input type="text" id="hostnameInput" placeholder="server-01">
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
+                    <label><i class="fa-solid fa-align-left"></i> Description</label>
                     <textarea id="descriptionInput" placeholder="Additional details…" rows="2"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Status *</label>
+                    <label><i class="fa-solid fa-circle-dot"></i> Status *</label>
                     <select id="statusSelect" required>
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
@@ -121,9 +167,12 @@
                 <small id="formError" class="error" style="display:block;margin-bottom:8px;"></small>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn btn-cancel"
-                        onclick="closeDialog('recordDialog')">Cancel</button>
-                <button type="submit" class="btn btn-add" id="saveBtn">Save</button>
+                <button type="button" class="btn btn-cancel" onclick="closeDialog('recordDialog')">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-add" id="saveBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save
+                </button>
             </div>
         </form>
     </div>
@@ -133,17 +182,21 @@
 <div id="deletedDialog" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Recover Deleted Records</h2>
-            <button class="close-btn" onclick="closeDialog('deletedDialog')">&times;</button>
+            <h2><i class="fa-solid fa-rotate-left"></i> Recover Deleted Records</h2>
+            <button class="close-btn" onclick="closeDialog('deletedDialog')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <div id="deletedList" class="deleted-list">
-            <p class="loading">Loading…</p>
+            <p class="loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</p>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn btn-delete"
-                    onclick="clearAllDeleted()">Clear All</button>
-            <button type="button" class="btn btn-cancel"
-                    onclick="closeDialog('deletedDialog')">Close</button>
+            <button type="button" class="btn btn-delete" onclick="clearAllDeleted()">
+                <i class="fa-solid fa-trash"></i> Clear All
+            </button>
+            <button type="button" class="btn btn-cancel" onclick="closeDialog('deletedDialog')">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
         </div>
     </div>
 </div>
@@ -152,24 +205,29 @@
 <div id="importDialog" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Import Records</h2>
-            <button class="close-btn" onclick="closeDialog('importDialog')">&times;</button>
+            <h2><i class="fa-solid fa-file-import"></i> Import Records</h2>
+            <button class="close-btn" onclick="closeDialog('importDialog')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <div class="form-body">
             <div class="form-group">
-                <label>Select file (.csv or .json)</label>
+                <label><i class="fa-solid fa-file"></i> Select file (.csv or .json)</label>
                 <input type="file" id="importFile" accept=".csv,.json">
             </div>
             <div id="importStatus" class="import-status"></div>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-cancel"
-                    onclick="closeDialog('importDialog')">Cancel</button>
-            <button type="button" class="btn btn-import"
-                    id="previewBtn" onclick="previewImport()">Preview</button>
-            <button type="button" class="btn btn-add"
-                    id="confirmImportBtn" onclick="confirmImport()"
-                    style="display:none;">Import</button>
+            <button type="button" class="btn btn-cancel" onclick="closeDialog('importDialog')">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-import" id="previewBtn" onclick="previewImport()">
+                <i class="fa-solid fa-eye"></i> Preview
+            </button>
+            <button type="button" class="btn btn-add" id="confirmImportBtn" onclick="confirmImport()"
+                    style="display:none;">
+                <i class="fa-solid fa-check"></i> Import
+            </button>
         </div>
     </div>
 </div>
@@ -178,13 +236,15 @@
 <div id="settingsDialog" class="modal">
     <div class="modal-content" style="max-width:560px;">
         <div class="modal-header">
-            <h2>Settings</h2>
-            <button class="close-btn" onclick="closeDialog('settingsDialog')">&times;</button>
+            <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+            <button class="close-btn" onclick="closeDialog('settingsDialog')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <div class="settings-content form-body">
 
             <!-- Change Password -->
-            <h3>Change Password</h3>
+            <h3><i class="fa-solid fa-key"></i> Change Password</h3>
             <div class="form-group">
                 <label>Current Password</label>
                 <input type="password" id="oldPassword" placeholder="Current password">
@@ -197,14 +257,18 @@
                 <label>Confirm New Password</label>
                 <input type="password" id="confirmPassword" placeholder="Confirm new password">
             </div>
-            <button type="button" class="btn btn-edit" onclick="changePassword()">Update Password</button>
+            <button type="button" class="btn btn-edit" onclick="changePassword()">
+                <i class="fa-solid fa-floppy-disk"></i> Update Password
+            </button>
 
             {% if role == 'admin' %}
+            <hr class="settings-divider">
             <!-- User Management (Admin only) -->
-            <hr style="border-color:var(--border-color);margin:24px 0 16px 0;">
-            <h3>User Management</h3>
+            <h3><i class="fa-solid fa-users"></i> User Management</h3>
             <div id="userList" class="deleted-list" style="margin-bottom:16px;max-height:200px;">
-                <p style="padding:12px;color:var(--text-secondary);font-size:13px;">Loading…</p>
+                <p style="padding:12px;color:var(--text-secondary);font-size:13px;">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading…
+                </p>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
                 <div style="flex:1;min-width:110px;" class="form-group">
@@ -223,28 +287,34 @@
                     </select>
                 </div>
                 <div class="form-group" style="align-self:flex-end;">
-                    <button type="button" class="btn btn-add" onclick="createNewUser()">Add User</button>
+                    <button type="button" class="btn btn-add" onclick="createNewUser()">
+                        <i class="fa-solid fa-user-plus"></i> Add
+                    </button>
                 </div>
             </div>
             {% endif %}
 
+            <hr class="settings-divider">
             <!-- About -->
-            <hr style="border-color:var(--border-color);margin:24px 0 16px 0;">
-            <h3>About</h3>
-            <p><strong>IP Management Tool</strong> v1.0.0 — Web Edition</p>
+            <h3><i class="fa-solid fa-circle-info"></i> About</h3>
+            <p><strong style="color:var(--text-primary);">IP Management Tool</strong> v1.0.0 — Web Edition</p>
             <p>Data stored in <code>data/ip_data.json</code> with automatic backups.</p>
-            <p id="settingsRecordCount">Loading…</p>
+            <p id="settingsRecordCount" style="margin-top:6px;"></p>
 
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn btn-cancel"
-                    onclick="closeDialog('settingsDialog')">Close</button>
+            <button type="button" class="btn btn-cancel" onclick="closeDialog('settingsDialog')">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
         </div>
     </div>
 </div>
 
 <!-- ── Toast ─────────────────────────────────────────────────────────── -->
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast">
+    <i class="fa-solid fa-circle-check toast-icon" id="toastIcon"></i>
+    <span id="toastMsg"></span>
+</div>
 
 <script>
     const CURRENT_USER = "{{ username }}";

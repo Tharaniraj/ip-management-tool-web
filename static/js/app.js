@@ -14,6 +14,17 @@ let currentSort     = { column: 'ip', reverse: false };
 document.addEventListener('DOMContentLoaded', () => {
     loadRecords();
 
+    // Hide write-action buttons for read-only users
+    if (USER_ROLE !== 'admin') {
+        ['btnAdd', 'btnEdit', 'btnDelete', 'btnImport', 'btnExport', 'btnBackup', 'btnRecover'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        // Hide select-all checkbox — no point selecting without actions
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) selectAll.style.display = 'none';
+    }
+
     document.getElementById('searchInput').addEventListener('keyup', () => loadRecords());
     document.getElementById('statusFilter').addEventListener('change', () => loadRecords());
 
@@ -97,13 +108,13 @@ function renderTable() {
         const isSelected  = selectedRows.has(idx);
         const statusClass = `status-${(record.status || 'unknown').toLowerCase()}`;
         const added       = record.added_on ? new Date(record.added_on).toLocaleDateString() : '-';
+        const checkboxCell = USER_ROLE === 'admin'
+            ? `<td><input type="checkbox" class="checkbox row-checkbox" data-index="${idx}" ${isSelected ? 'checked' : ''}></td>`
+            : '<td></td>';
 
         return `
             <tr class="${isSelected ? 'selected' : ''}" data-index="${idx}">
-                <td>
-                    <input type="checkbox" class="checkbox row-checkbox"
-                           data-index="${idx}" ${isSelected ? 'checked' : ''}>
-                </td>
+                ${checkboxCell}
                 <td><code>${record.ip}</code></td>
                 <td>${record.subnet || '-'}</td>
                 <td>${record.hostname || '-'}</td>
@@ -127,14 +138,17 @@ function renderTable() {
         });
     });
 
-    document.querySelectorAll('#tableBody tr').forEach(row => {
-        row.addEventListener('click', (e) => {
-            if (e.target.tagName === 'INPUT') return;
-            const checkbox = row.querySelector('.row-checkbox');
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event('change'));
+    if (USER_ROLE === 'admin') {
+        document.querySelectorAll('#tableBody tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                const checkbox = row.querySelector('.row-checkbox');
+                if (!checkbox) return;
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            });
         });
-    });
+    }
 }
 
 function updateRowSelection() {
@@ -480,10 +494,16 @@ document.addEventListener('click', (e) => {
 // ━━ TOAST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 function showToast(message, type = 'info') {
-    const toast     = document.getElementById('toast');
-    toast.textContent = message;
+    const toast = document.getElementById('toast');
+    const icon  = document.getElementById('toastIcon');
+    const msg   = document.getElementById('toastMsg');
+
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+    icon.className = `fa-solid ${icons[type] || icons.info} toast-icon`;
+    msg.textContent = message;
     toast.className = `toast active ${type}`;
-    setTimeout(() => toast.classList.remove('active'), 3000);
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('active'), 3200);
 }
 
 // ━━ UTILITIES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

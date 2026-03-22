@@ -145,7 +145,7 @@ def api_get_records():
 
 
 @app.route("/api/records", methods=["POST"])
-@login_required
+@admin_required
 def api_add_record():
     d = request.json or {}
     records = load_records()
@@ -164,7 +164,7 @@ def api_add_record():
 
 
 @app.route("/api/records/<int:index>", methods=["PUT"])
-@login_required
+@admin_required
 def api_update_record(index):
     d = request.json or {}
     records = load_records()
@@ -183,7 +183,7 @@ def api_update_record(index):
 
 
 @app.route("/api/records/delete", methods=["POST"])
-@login_required
+@admin_required
 def api_delete_records():
     indices = (request.json or {}).get("indices", [])
     records = load_records()
@@ -206,7 +206,7 @@ def api_summary():
 # ── IMPORT ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/import", methods=["POST"])
-@login_required
+@admin_required
 def api_import_preview():
     if "file" not in request.files:
         return jsonify({"success": False, "error": "No file provided"}), 400
@@ -245,7 +245,7 @@ def api_import_preview():
 
 
 @app.route("/api/import/confirm", methods=["POST"])
-@login_required
+@admin_required
 def api_import_confirm():
     d        = request.json or {}
     new_recs = d.get("records", [])
@@ -265,7 +265,7 @@ def api_import_confirm():
 # ── EXPORT ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/export")
-@login_required
+@admin_required
 def api_export():
     fmt    = request.args.get("format", "csv")
     q      = request.args.get("q", "")
@@ -299,7 +299,7 @@ def api_export():
 # ── BACKUP ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/backup", methods=["POST"])
-@login_required
+@admin_required
 def api_backup():
     ok = create_backup()
     cleanup_old_backups()
@@ -319,7 +319,7 @@ def api_get_deleted():
 
 
 @app.route("/api/deleted/<int:index>/recover", methods=["POST"])
-@login_required
+@admin_required
 def api_recover(index):
     deleted = get_deleted_records()
     if not (0 <= index < len(deleted)):
@@ -347,20 +347,20 @@ def api_recover(index):
 
 
 @app.route("/api/deleted", methods=["DELETE"])
-@login_required
+@admin_required
 def api_clear_deleted():
     clear_deleted_records()
     return jsonify({"success": True})
 
 
 @app.route("/api/deleted/clear", methods=["POST"])
-@login_required
+@admin_required
 def api_clear_deleted_post():
     return api_clear_deleted()
 
 
 @app.route("/api/deleted/recover", methods=["POST"])
-@login_required
+@admin_required
 def api_recover_by_ip():
     ip      = (request.json or {}).get("ip", "")
     deleted = get_deleted_records()
@@ -391,7 +391,7 @@ def api_get_settings():
 
 
 @app.route("/api/settings", methods=["PUT"])
-@login_required
+@admin_required
 def api_update_settings():
     data = request.json or {}
     os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
