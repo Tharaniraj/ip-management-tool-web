@@ -8,27 +8,32 @@ import hashlib
 import json
 import os
 import secrets
+import threading
 
 _BASE = os.path.dirname(__file__)
 USERS_FILE = os.path.normpath(os.path.join(_BASE, "..", "data", "users.json"))
+
+AUTH_LOCK = threading.RLock()
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 def _load_users() -> dict:
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
+    with AUTH_LOCK:
+        if os.path.exists(USERS_FILE):
+            try:
+                with open(USERS_FILE, encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
 
 
 def _save_users(users: dict) -> None:
-    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=2)
+    with AUTH_LOCK:
+        os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2)
 
 
 def _hash(password: str, salt: str | None = None):
@@ -75,32 +80,35 @@ def list_users() -> list:
 
 def create_user(username: str, password: str, role: str = "user"):
     """Returns (True, None) on success or (False, error_message)."""
-    if not username or not password:
-        return False, "Username and password are required"
-    users = _load_users()
-    if username in users:
-        return False, "Username already exists"
-    salt, hashed = _hash(password)
-    users[username] = {"salt": salt, "password": hashed, "role": role}
-    _save_users(users)
-    return True, None
+    with AUTH_LOCK:
+        if not username or not password:
+            return False, "Username and password are required"
+        users = _load_users()
+        if username in users:
+            return False, "Username already exists"
+        salt, hashed = _hash(password)
+        users[username] = {"salt": salt, "password": hashed, "role": role}
+        _save_users(users)
+        return True, None
 
 
 def change_password(username: str, new_password: str) -> bool:
-    users = _load_users()
-    if username not in users:
-        return False
-    salt, hashed = _hash(new_password)
-    users[username]["salt"]     = salt
-    users[username]["password"] = hashed
-    _save_users(users)
-    return True
+    with AUTH_LOCK:
+        users = _load_users()
+        if username not in users:
+            return False
+        salt, hashed = _hash(new_password)
+        users[username]["salt"]     = salt
+        users[username]["password"] = hashed
+        _save_users(users)
+        return True
 
 
 def delete_user(username: str) -> bool:
-    users = _load_users()
-    if username not in users:
-        return False
-    del users[username]
-    _save_users(users)
-    return True
+    with AUTH_LOCK:
+        users = _load_users()
+        if username not in users:
+            return False
+        del users[username]
+        _save_users(users)
+        return True

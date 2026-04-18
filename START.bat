@@ -52,7 +52,6 @@ start "" /b cmd /c "timeout /t 3 >nul && start http://localhost:5000"
 
 REM ── Start server ──────────────────────────────────────────────
 echo [*] Starting web server at http://localhost:5000
-echo     Default login: admin / admin123
 echo     Press Ctrl+C to stop
 echo.
 python app.py

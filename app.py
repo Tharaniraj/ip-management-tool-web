@@ -37,6 +37,8 @@ from modules import (
     VALID_STATUSES,
     update_record,
 )
+from modules.ip_manager import DATA_LOCK
+from modules.backup import BACKUP_LOCK, DELETED_FILE
 from modules.auth import (
     authenticate,
     change_password,
@@ -49,7 +51,25 @@ from modules.auth import (
 from modules.backup import clear_deleted_records, DELETED_FILE
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24).hex())
+
+def get_secret_key():
+    key_file = os.path.join(os.path.dirname(__file__), "data", ".secret_key")
+    if os.path.exists(key_file):
+        with open(key_file, "r") as f:
+            return f.read().strip()
+    key = os.urandom(24).hex()
+    os.makedirs(os.path.dirname(key_file), exist_ok=True)
+    with open(key_file, "w") as f:
+        f.write(key)
+    return key
+
+app.secret_key = os.environ.get("SECRET_KEY", get_secret_key())
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True
+)
+
 CORS(app)
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "data", "settings.json")
@@ -148,9 +168,7 @@ def api_get_records():
 @admin_required
 def api_add_record():
     d = request.json or {}
-    records = load_records()
     _, err = add_record(
-        records,
         d.get("ip", ""),
         d.get("subnet", "24"),
         d.get("hostname", ""),
@@ -167,9 +185,8 @@ def api_add_record():
 @admin_required
 def api_update_record(index):
     d = request.json or {}
-    records = load_records()
     _, err = update_record(
-        records, index,
+        index,
         d.get("ip", ""),
         d.get("subnet", "24"),
         d.get("hostname", ""),
@@ -186,11 +203,12 @@ def api_update_record(index):
 @admin_required
 def api_delete_records():
     indices = (request.json or {}).get("indices", [])
-    records = load_records()
-    valid   = {i for i in indices if 0 <= i < len(records)}
-    for i in valid:
-        save_deleted_record(records[i])
-    save_records([r for j, r in enumerate(records) if j not in valid])
+    with DATA_LOCK:
+        records = load_records()
+        valid   = {i for i in indices if 0 <= i < len(records)}
+        for i in valid:
+            save_deleted_record(records[i])
+        save_records([r for j, r in enumerate(records) if j not in valid])
     log_info(f"Deleted {len(valid)} record(s) (by {session.get('username')})")
     return jsonify({"success": True, "deleted": len(valid)})
 
@@ -251,13 +269,14 @@ def api_import_confirm():
     new_recs = d.get("records", [])
     skip     = d.get("skip_conflicts", True)
 
-    existing = load_records()
-    if skip:
-        ex_ips   = {r["ip"] for r in existing}
-        new_recs = [r for r in new_recs if r["ip"] not in ex_ips]
+    with DATA_LOCK:
+        existing = load_records()
+        if skip:
+            ex_ips   = {r["ip"] for r in existing}
+            new_recs = [r for r in new_recs if r["ip"] not in ex_ips]
 
-    existing.extend(new_recs)
-    save_records(existing)
+        existing.extend(new_recs)
+        save_records(existing)
     log_info(f"Imported {len(new_recs)} records (by {session.get('username')})")
     return jsonify({"success": True, "imported": len(new_recs)})
 
@@ -321,26 +340,29 @@ def api_get_deleted():
 @app.route("/api/deleted/<int:index>/recover", methods=["POST"])
 @admin_required
 def api_recover(index):
-    deleted = get_deleted_records()
-    if not (0 <= index < len(deleted)):
-        return jsonify({"success": False, "error": "Invalid index"}), 400
+    with BACKUP_LOCK:
+        deleted = get_deleted_records()
+        if not (0 <= index < len(deleted)):
+            return jsonify({"success": False, "error": "Invalid index"}), 400
 
-    rec     = deleted[index]
-    records = load_records()
-    if any(r["ip"] == rec["ip"] for r in records):
-        return jsonify({"success": False,
-                        "error": f"IP {rec['ip']} already exists"}), 409
+        rec     = deleted[index]
+        
+        with DATA_LOCK:
+            records = load_records()
+            if any(r["ip"] == rec["ip"] for r in records):
+                return jsonify({"success": False,
+                                "error": f"IP {rec['ip']} already exists"}), 409
 
-    clean = {k: v for k, v in rec.items() if k != "deleted_on"}
-    records.append(clean)
-    save_records(records)
+            clean = {k: v for k, v in rec.items() if k != "deleted_on"}
+            records.append(clean)
+            save_records(records)
 
-    deleted.pop(index)
-    if deleted:
-        with open(DELETED_FILE, "w", encoding="utf-8") as f:
-            json.dump(deleted, f, indent=2, ensure_ascii=False)
-    else:
-        clear_deleted_records()
+        deleted.pop(index)
+        if deleted:
+            with open(DELETED_FILE, "w", encoding="utf-8") as f:
+                json.dump(deleted, f, indent=2, ensure_ascii=False)
+        else:
+            clear_deleted_records()
 
     log_info(f"Recovered {rec['ip']} (by {session.get('username')})")
     return jsonify({"success": True})
@@ -496,9 +518,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"  Local:   http://localhost:5000")
     print(f"  Network: http://{local_ip}:5000")
-    if created:
-        print("  Default login — username: admin   password: admin123")
-        print("  Change your password after first login!")
     print("  Press Ctrl+C to stop")
     print("=" * 60 + "\n")
 
