@@ -21,6 +21,9 @@ MarkupSafe==3.0.3
 # ── CORS support ─────────────────────────────────────────────
 flask-cors==6.0.2
 
+# ── Encryption & Security ────────────────────────────────────
+cryptography>=41.0.0
+
 # ── Production WSGI server (choose one) ──────────────────────
 #   Linux/macOS  →  gunicorn
 #   Windows      →  waitress

@@ -88,9 +88,6 @@
                         <th class="sortable" data-column="ip">
                             <i class="fa-solid fa-network-wired" style="opacity:.6;margin-right:4px;"></i>IP Address
                         </th>
-                        <th class="sortable" data-column="subnet">
-                            <i class="fa-solid fa-sitemap" style="opacity:.6;margin-right:4px;"></i>Subnet
-                        </th>
                         <th class="sortable" data-column="hostname">
                             <i class="fa-solid fa-server" style="opacity:.6;margin-right:4px;"></i>Hostname
                         </th>
@@ -107,7 +104,7 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr class="loading">
-                        <td colspan="7"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading records…</td>
+                        <td colspan="6"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading records…</td>
                     </tr>
                 </tbody>
             </table>
@@ -140,13 +137,9 @@
         <form id="recordForm">
             <div class="form-body">
                 <div class="form-group">
-                    <label><i class="fa-solid fa-network-wired"></i> IP Address *</label>
-                    <input type="text" id="ipInput" placeholder="192.168.1.1" required>
+                    <label><i class="fa-solid fa-network-wired"></i> IP Address (e.g. 192.168.1.1/24) *</label>
+                    <input type="text" id="ipInput" placeholder="192.168.1.1/24" required>
                     <small id="ipError" class="error"></small>
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-sitemap"></i> Subnet *</label>
-                    <input type="text" id="subnetInput" placeholder="24  or  255.255.255.0" required>
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-server"></i> Hostname</label>
@@ -293,6 +286,44 @@
                 </div>
             </div>
             {% endif %}
+
+            <hr class="settings-divider">
+            <!-- Appearance -->
+            <h3><i class="fa-solid fa-palette"></i> Appearance</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                <div class="form-group" style="flex:1;min-width:110px;">
+                    <label>Background Colour</label>
+                    <input type="color" id="bgColor" style="width:100%;height:32px;cursor:pointer;border:none;background:none;">
+                </div>
+                <div class="form-group" style="flex:1;min-width:110px;">
+                    <label>Font Colour</label>
+                    <input type="color" id="fontColor" style="width:100%;height:32px;cursor:pointer;border:none;background:none;">
+                </div>
+                <div class="form-group" style="flex:1;min-width:110px;">
+                    <label>Font Size</label>
+                    <select id="fontSize">
+                        <option value="12px">Small</option>
+                        <option value="14px">Medium</option>
+                        <option value="16px">Large</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:110px;">
+                    <label>Font Family</label>
+                    <select id="fontFamily">
+                        <option value="'Inter', sans-serif">Inter</option>
+                        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                        <option value="'Courier New', monospace">Monospace</option>
+                    </select>
+                </div>
+                <div class="form-group" style="width:100%;display:flex;gap:8px;">
+                    <button type="button" class="btn btn-edit" onclick="saveAppearance()">
+                        <i class="fa-solid fa-floppy-disk"></i> Apply
+                    </button>
+                    <button type="button" class="btn btn-cancel" onclick="resetAppearance()">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+            </div>
 
             <hr class="settings-divider">
             <!-- About -->

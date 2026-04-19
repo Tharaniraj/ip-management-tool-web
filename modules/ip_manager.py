@@ -9,9 +9,11 @@ from modules.validator import (
     validate_ip, validate_subnet, normalize_subnet, VALID_STATUSES,
     validate_hostname_unique
 )
+from modules.db_encryption import encrypt_data, decrypt_data
 
 DATA_DIR  = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-DATA_FILE = os.path.join(DATA_DIR, "ip_data.json")
+DATA_FILE = os.path.join(DATA_DIR, "ip_data.enc")
+LEGACY_DATA_FILE = os.path.join(DATA_DIR, "ip_data.json")
 DATA_LOCK = threading.RLock()
 
 
@@ -20,25 +22,46 @@ def _ensure_data_dir() -> None:
 
 
 def load_records() -> List[Dict]:
-    """Load all IP records from the JSON data file."""
+    """Load all IP records from the Encrypted JSON data file. Auto-migrates plaintext JSON."""
     with DATA_LOCK:
         _ensure_data_dir()
+        
+        # Migration logic
+        if not os.path.exists(DATA_FILE) and os.path.exists(LEGACY_DATA_FILE):
+            try:
+                with open(LEGACY_DATA_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                records = data if isinstance(data, list) else []
+                save_records(records)
+                os.rename(LEGACY_DATA_FILE, LEGACY_DATA_FILE + ".bak")
+                return records
+            except Exception:
+                pass
+        
         if not os.path.exists(DATA_FILE):
             return []
+            
         try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data if isinstance(data, list) else []
-        except (json.JSONDecodeError, IOError):
+            with open(DATA_FILE, "rb") as f:
+                encrypted_data = f.read()
+            json_str = decrypt_data(encrypted_data)
+            data = json.loads(json_str)
+            return data if isinstance(data, list) else []
+        except Exception:
             return []
 
 
 def save_records(records: List[Dict]) -> None:
-    """Persist all IP records to the JSON data file."""
+    """Persist all IP records to the Encrypted JSON data file."""
     with DATA_LOCK:
         _ensure_data_dir()
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(records, f, indent=2, ensure_ascii=False)
+        try:
+            json_str = json.dumps(records, indent=2, ensure_ascii=False)
+            encrypted_data = encrypt_data(json_str)
+            with open(DATA_FILE, "wb") as f:
+                f.write(encrypted_data)
+        except Exception:
+            pass
 
 
 def _find_duplicate(records: List[Dict], ip: str, exclude_index: int = -1) -> bool:
@@ -183,3 +206,53 @@ def get_summary(records: List[Dict]) -> Dict:
         "inactive": inactive,
         "reserved": reserved,
     }
+
+def search_records(
+    records: list[dict],
+    query: str,
+    fields: list[str] | None = None,
+) -> list[dict]:
+    """
+    Return records where any of the given fields contain the query string.
+    Case-insensitive. If fields is None, all fields are searched.
+    Each returned dict is augmented with '_index' = original list position.
+    """
+    if fields is None:
+        fields = ["ip", "subnet", "hostname", "description", "status", "added_on"]
+
+    query = query.strip().lower()
+    results = []
+
+    for i, rec in enumerate(records):
+        if not query:
+            results.append({**rec, "_index": i})
+            continue
+        for field in fields:
+            if query in str(rec.get(field, "")).lower():
+                results.append({**rec, "_index": i})
+                break
+
+    return results
+
+def filter_by_status(records: list[dict], status: str) -> list[dict]:
+    """Filter records by exact status match."""
+    return [r for r in records if r.get("status", "").lower() == status.lower()]
+
+def sort_records(
+    records: list[dict],
+    key: str = "ip",
+    reverse: bool = False,
+) -> list[dict]:
+    """Sort records by field. IP addresses sorted numerically."""
+    if key == "ip":
+        from modules.validator import ip_to_int
+        def sort_key(r):
+            try:
+                return ip_to_int(r.get("ip", "0.0.0.0"))
+            except Exception:
+                return 0
+    else:
+        def sort_key(r):
+            return str(r.get(key, "")).lower()
+
+    return sorted(records, key=sort_key, reverse=reverse)

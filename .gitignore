@@ -18,11 +18,15 @@ env/
 
 # Data — personal records and generated files, never commit
 data/ip_data.json
+data/ip_data.enc
 data/ip_records.db
 data/deleted_records.json
+data/deleted_records.enc
 data/backups/
 data/settings.json
 data/users.json
+data/.secret_key
+data/.db_key
 
 # Logs
 logs/

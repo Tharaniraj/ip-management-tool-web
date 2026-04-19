@@ -115,8 +115,7 @@ function renderTable() {
         return `
             <tr class="${isSelected ? 'selected' : ''}" data-index="${idx}">
                 ${checkboxCell}
-                <td><code>${record.ip}</code></td>
-                <td>${record.subnet || '-'}</td>
+                <td><code>${record.ip}${record.subnet ? '/' + record.subnet : '/32'}</code></td>
                 <td>${record.hostname || '-'}</td>
                 <td>${record.description || '-'}</td>
                 <td><span class="status-badge ${statusClass}">${record.status || ''}</span></td>
@@ -189,9 +188,9 @@ function openEditDialog() {
 
     editingIndex = idx;
     document.getElementById('dialogTitle').textContent         = 'Edit IP Record';
-    document.getElementById('ipInput').value                   = record.ip;
+    let subnetStr = record.subnet ? `/${record.subnet}` : "/32";
+    document.getElementById('ipInput').value                   = record.ip + subnetStr;
     document.getElementById('ipInput').disabled                = true;
-    document.getElementById('subnetInput').value               = record.subnet || '24';
     document.getElementById('hostnameInput').value             = record.hostname || '';
     document.getElementById('descriptionInput').value          = record.description || '';
     document.getElementById('statusSelect').value              = record.status;
@@ -201,8 +200,14 @@ function openEditDialog() {
 }
 
 async function saveRecord() {
-    const ip          = document.getElementById('ipInput').value.trim();
-    const subnet      = document.getElementById('subnetInput').value.trim();
+    let rawIp = document.getElementById('ipInput').value.trim();
+    let ip = rawIp;
+    let subnet = "32";
+    if (rawIp.includes('/')) {
+        const parts = rawIp.split('/');
+        ip = parts[0].trim();
+        subnet = parts[1].trim();
+    }
     const hostname    = document.getElementById('hostnameInput').value.trim();
     const description = document.getElementById('descriptionInput').value.trim();
     const status      = document.getElementById('statusSelect').value;
@@ -622,3 +627,57 @@ async function deleteUserAccount(username) {
         showToast('Failed to delete user', 'error');
     }
 }
+
+// ━━ APPEARANCE SETTINGS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function loadAppearance() {
+    const bg = localStorage.getItem('appBgColor');
+    const fg = localStorage.getItem('appFontColor');
+    const fs = localStorage.getItem('appFontSize');
+    const ff = localStorage.getItem('appFontFamily');
+    if (bg) document.documentElement.style.setProperty('--bg-deep', bg);
+    if (fg) document.documentElement.style.setProperty('--text-primary', fg);
+    if (fs) document.body.style.fontSize = fs;
+    if (ff) document.body.style.fontFamily = ff;
+    
+    const dBg = document.getElementById('bgColor');
+    const dFg = document.getElementById('fontColor');
+    const dFs = document.getElementById('fontSize');
+    const dFf = document.getElementById('fontFamily');
+    if (dBg) dBg.value = bg || '#020817';
+    if (dFg) dFg.value = fg || '#e2e8f0';
+    if (dFs) dFs.value = fs || '';
+    if (dFf) dFf.value = ff || '';
+}
+
+function saveAppearance() {
+    const bg = document.getElementById('bgColor');
+    const fg = document.getElementById('fontColor');
+    const fs = document.getElementById('fontSize');
+    const ff = document.getElementById('fontFamily');
+    
+    if (bg) localStorage.setItem('appBgColor', bg.value);
+    if (fg) localStorage.setItem('appFontColor', fg.value);
+    if (fs && fs.value) localStorage.setItem('appFontSize', fs.value);
+    if (ff && ff.value) localStorage.setItem('appFontFamily', ff.value);
+    
+    loadAppearance();
+    showToast('Appearance settings applied', 'success');
+}
+
+function resetAppearance() {
+    localStorage.removeItem('appBgColor');
+    localStorage.removeItem('appFontColor');
+    localStorage.removeItem('appFontSize');
+    localStorage.removeItem('appFontFamily');
+    
+    document.documentElement.style.removeProperty('--bg-deep');
+    document.documentElement.style.removeProperty('--text-primary');
+    document.body.style.fontSize = '';
+    document.body.style.fontFamily = '';
+    
+    loadAppearance();
+    showToast('Appearance reset to default', 'info');
+}
+
+document.addEventListener('DOMContentLoaded', loadAppearance);

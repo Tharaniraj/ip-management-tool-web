@@ -28,8 +28,19 @@ def import_csv(file_path: str) -> Tuple[List[Dict], List[str]]:
                 return records, ["Invalid CSV: no header row"]
             
             for row_num, row in enumerate(reader, start=2):
-                ip = row.get("ip", "").strip()
+                raw_ip = row.get("ip", "").strip()
                 subnet = row.get("subnet", "").strip()
+                
+                # Parse subnet from IP string if present (e.g., 192.168.1.1/24)
+                ip = raw_ip
+                if "/" in raw_ip:
+                    parts = raw_ip.split("/", 1)
+                    ip = parts[0].strip()
+                    if not subnet:
+                        subnet = parts[1].strip()
+                elif not subnet:
+                    subnet = "32"
+                    
                 hostname = row.get("hostname", "").strip()
                 description = row.get("description", "").strip()
                 status = row.get("status", "Active").strip()
@@ -40,9 +51,6 @@ def import_csv(file_path: str) -> Tuple[List[Dict], List[str]]:
                     continue
                 if not validate_ip(ip):
                     errors.append(f"Row {row_num}: Invalid IP '{ip}'")
-                    continue
-                if not subnet:
-                    errors.append(f"Row {row_num}: Subnet is required")
                     continue
                 if not validate_subnet(subnet):
                     errors.append(f"Row {row_num}: Invalid subnet '{subnet}'")
@@ -92,8 +100,19 @@ def import_json(file_path: str) -> Tuple[List[Dict], List[str]]:
                     errors.append(f"Item {idx}: Not a dictionary")
                     continue
                 
-                ip = item.get("ip", "").strip()
+                raw_ip = item.get("ip", "").strip()
                 subnet = item.get("subnet", "").strip()
+                
+                # Parse subnet from IP string if present
+                ip = raw_ip
+                if "/" in raw_ip:
+                    parts = raw_ip.split("/", 1)
+                    ip = parts[0].strip()
+                    if not subnet:
+                        subnet = parts[1].strip()
+                elif not subnet:
+                    subnet = "32"
+                    
                 hostname = item.get("hostname", "").strip()
                 description = item.get("description", "").strip()
                 status = item.get("status", "Active").strip()
@@ -104,9 +123,6 @@ def import_json(file_path: str) -> Tuple[List[Dict], List[str]]:
                     continue
                 if not validate_ip(ip):
                     errors.append(f"Item {idx}: Invalid IP '{ip}'")
-                    continue
-                if not subnet:
-                    errors.append(f"Item {idx}: Subnet is required")
                     continue
                 if not validate_subnet(subnet):
                     errors.append(f"Item {idx}: Invalid subnet '{subnet}'")
